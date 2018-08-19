@@ -1,10 +1,12 @@
 package main
 
 import (
+	"bufio"
 	"database/sql"
 	"html/template"
 	"log"
 	"net/http"
+	"os"
 	"strconv"
 	"strings"
 
@@ -13,7 +15,7 @@ import (
 
 //var templates *template.Template
 type postBin struct {
-	Posters []splashPost
+	Posters []article
 }
 
 type article struct {
@@ -25,19 +27,13 @@ type article struct {
 	Tags     []string
 }
 
-type splashPost struct {
-	ID       int
-	Title    string
-	PostText string
-	Date     string
-}
-
 var db *sql.DB
 
 func main() {
+	dbString := readConfig("server.confi")
 	var err error
 	//var articleMux = http.NewServeMux()
-	db, err = sql.Open("mysql", "Admin:inver53@tcp(localhost:3306)/blog?tls=false&timeout=30s")
+	db, err = sql.Open("mysql", dbString)
 	if err != nil {
 		log.Fatal("dbConnection failed : ", err)
 	}
@@ -46,15 +42,10 @@ func main() {
 	if err != nil {
 		log.Fatal("dbConnection failed : ", err)
 	}
-
 	http.Handle("/", http.FileServer(http.Dir("./src")))
 	http.HandleFunc("/articles/", articleHandler)
 	http.HandleFunc("/index.html", homePage)
-	//articleMux.Handle("/articles/", nil)
-	//articleMux.HandleFunc("/article/", articleHandler)
-
 	log.Fatal(http.ListenAndServe(":8080", nil))
-
 }
 
 func articleHandler(w http.ResponseWriter, r *http.Request) {
@@ -62,6 +53,7 @@ func articleHandler(w http.ResponseWriter, r *http.Request) {
 	articleID, err := strconv.Atoi(requestURI[len(requestURI)-1])
 	template, err := template.ParseFiles("./src/articles/article.html")
 	article := getArticle(articleID)
+
 	err = template.Execute(w, article)
 	if err != nil {
 		//go fileNotFound(err, w, r)
@@ -76,7 +68,7 @@ func homePage(w http.ResponseWriter, r *http.Request) {
 	//var posts = postBin{testPost}
 	templates, err := template.ParseFiles("./src/index.html")
 	if err != nil {
-		fileNotFound(err, w, r)
+		log.Fatal("Parsing error : ", err)
 	}
 	homePage := templates.Lookup("index.html")
 	homePage.Execute(w, allp)
@@ -88,10 +80,10 @@ func frontPagePosts(db *sql.DB) postBin {
 	if err != nil {
 		log.Fatal("DB statement failed : ", err)
 	}
-	var dbResults []splashPost
+	var dbResults []article
 	defer returnPost.Close()
 	for returnPost.Next() {
-		var bp splashPost
+		var bp article
 		returnPost.Scan(&bp.ID, &bp.Title, &bp.PostText, &bp.Date)
 		bp.PostText = bp.PostText[0:40]
 		dbResults = append(dbResults, bp)
@@ -109,12 +101,38 @@ func getArticle(id int) article {
 		log.Fatal("Statement prep failed : ", err)
 	}
 	returnArticle := s.QueryRow(id)
-
 	returnArticle.Scan(&ar.ID, &ar.Title, &ar.PostText, &ar.Date)
 	return ar
 }
 
-func fileNotFound(err error, w http.ResponseWriter, r *http.Request) {
-	log.Print("File not found, ", err)
-	http.ServeFile(w, r, "./src/404.html")
+func readConfig(s string) string {
+	config, err := os.Open(s)
+	if err != nil {
+		log.Fatal("File open failure : ", err)
+	}
+	defer config.Close()
+
+	scanner := bufio.NewScanner(config)
+	scanner.Scan()
+	return scanner.Text()
+
 }
+
+/*func check(err error) {
+	if err != nil {
+		if _, noLog := os.Stat("log.txt"); os.IsNotExist(noLog) {
+			newLog, err := os.Create("log.txt")
+			if err != nil {
+				log.Fatal(err)
+			}
+			newLog.Close()
+		}
+		errorLog, err := os.Open("log.txt")
+		if err != nil {
+			log.Fatal(err)
+		}
+		defer errorLog.Close()
+		log.SetOutput(errorLog)
+		log.Printf("An error has occured : ", err)
+	}
+}*/
