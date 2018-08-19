@@ -36,8 +36,8 @@ var db *sql.DB
 
 func main() {
 	var err error
-	var articleMux = http.NewServeMux()
-	db, err = sql.Open("mysql", "")
+	//var articleMux = http.NewServeMux()
+	db, err = sql.Open("mysql", "Admin:inver53@tcp(localhost:3306)/blog?tls=false&timeout=30s")
 	if err != nil {
 		log.Fatal("dbConnection failed : ", err)
 	}
@@ -48,10 +48,11 @@ func main() {
 	}
 
 	http.Handle("/", http.FileServer(http.Dir("./src")))
-
+	http.HandleFunc("/articles/", articleHandler)
 	http.HandleFunc("/index.html", homePage)
 	//articleMux.Handle("/articles/", nil)
-	articleMux.HandleFunc("/", articleHandler)
+	//articleMux.HandleFunc("/article/", articleHandler)
+
 	log.Fatal(http.ListenAndServe(":8080", nil))
 
 }
@@ -59,11 +60,12 @@ func main() {
 func articleHandler(w http.ResponseWriter, r *http.Request) {
 	requestURI := strings.SplitAfter(r.RequestURI, "/")
 	articleID, err := strconv.Atoi(requestURI[len(requestURI)-1])
-	template, err := template.ParseFiles("./src/articles/articles.html")
+	template, err := template.ParseFiles("./src/articles/article.html")
 	article := getArticle(articleID)
-	template.Execute(w, article)
+	err = template.Execute(w, article)
 	if err != nil {
-		go fileNotFound(err, w, r)
+		//go fileNotFound(err, w, r)
+		log.Fatal("Fatal parsing error : ", err)
 	}
 
 }
@@ -82,7 +84,7 @@ func homePage(w http.ResponseWriter, r *http.Request) {
 }
 
 func frontPagePosts(db *sql.DB) postBin {
-	returnPost, err := db.Query("SELECT * FROM blog.blog_posts LIMIT 3")
+	returnPost, err := db.Query("SELECT * FROM blog.blog_posts LIMIT 5")
 	if err != nil {
 		log.Fatal("DB statement failed : ", err)
 	}
@@ -106,8 +108,8 @@ func getArticle(id int) article {
 	if err != nil {
 		log.Fatal("Statement prep failed : ", err)
 	}
-	returnArticle, err := s.Query(id)
-	defer returnArticle.Close()
+	returnArticle := s.QueryRow(id)
+
 	returnArticle.Scan(&ar.ID, &ar.Title, &ar.PostText, &ar.Date)
 	return ar
 }
