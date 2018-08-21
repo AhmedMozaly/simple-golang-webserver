@@ -33,10 +33,8 @@ func PassDataBase(db *sql.DB) {
 func ReturnArticle(w http.ResponseWriter, r *http.Request) {
 	requestURI := strings.SplitAfter(r.RequestURI, "/")
 	articleID, err := strconv.Atoi(requestURI[len(requestURI)-1])
-
 	template, err := template.ParseFiles("./src/articles/article.html")
 	article := getArticle(articleID)
-
 	err = template.Execute(w, article)
 	if err != nil {
 		log.Fatal("Fatal parsing error : ", err)
