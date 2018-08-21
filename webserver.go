@@ -56,12 +56,20 @@ func readConfig(s string) string {
 
 func check(err error) {
 	if err != nil {
-		errorLog, err := os.OpenFile("log.txt", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
-		if err != nil {
+		errorLog, osError := os.OpenFile("log.txt", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+		if osError != nil {
 			log.Fatal(err)
 		}
 		defer errorLog.Close()
-		log.SetOutput(errorLog)
+		textLogger := log.New(errorLog, "go-webserver", log.LstdFlags)
+		switch err {
+		case http.ErrMissingFile:
+			log.Print(err)
+			textLogger.Fatal("File missing/cannot be accessed : ", err)
+		case sql.ErrTxDone:
+			log.Print(err)
+			textLogger.Fatal("SQL connection failure : ", err)
+		}
 		log.Println("An error has occured : ", err)
 	}
 }
