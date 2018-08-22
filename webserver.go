@@ -4,16 +4,18 @@ import (
 	"Go-Webserver/webserver/articlehandler"
 	"bufio"
 	"database/sql"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
+	"time"
 
 	_ "github.com/go-sql-driver/mysql"
 )
 
 func init() {
-	if _, noLog := os.Stat("log.txt"); os.IsNotExist(noLog) {
-		newLog, err := os.Create("log.txt")
+	if _, noLog := os.Stat("/log.txt"); os.IsNotExist(noLog) {
+		newLog, err := os.Create("/log.txt")
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -23,29 +25,23 @@ func init() {
 	var err error
 	//var articleMux = http.NewServeMux()
 	db, err := sql.Open("mysql", dbString)
-	if err != nil {
-		check(err)
-	}
-	//defer db.Close()
+	check(err)
 	err = db.Ping()
-	if err != nil {
-		check(err)
-	}
+	check(err)
+	dbChecker := time.NewTicker(time.Minute)
+	go checkDB(dbChecker, db)
 	articlehandler.PassDataBase(db)
 }
 
 func main() {
-	http.Handle("/", http.FileServer(http.Dir("./src")))
 	http.HandleFunc("/articles/", articlehandler.ReturnArticle)
-	http.HandleFunc("/index.html", articlehandler.ReturnHomePage)
+	http.HandleFunc("/", articlehandler.ReturnHomePage)
 	log.Fatal(http.ListenAndServe(":8080", nil))
 }
 
 func readConfig(s string) string {
 	config, err := os.Open(s)
-	if err != nil {
-		log.Fatal("File open failure : ", err)
-	}
+	check(err)
 	defer config.Close()
 
 	scanner := bufio.NewScanner(config)
@@ -56,7 +52,7 @@ func readConfig(s string) string {
 
 func check(err error) {
 	if err != nil {
-		errorLog, osError := os.OpenFile("log.txt", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+		errorLog, osError := os.OpenFile("/log.txt", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 		if osError != nil {
 			log.Fatal(err)
 		}
@@ -65,11 +61,23 @@ func check(err error) {
 		switch err {
 		case http.ErrMissingFile:
 			log.Print(err)
-			textLogger.Fatal("File missing/cannot be accessed : ", err)
+			textLogger.Fatalln("File missing/cannot be accessed : ", err)
 		case sql.ErrTxDone:
 			log.Print(err)
-			textLogger.Fatal("SQL connection failure : ", err)
+			textLogger.Fatalln("SQL connection failure : ", err)
 		}
 		log.Println("An error has occured : ", err)
+	}
+}
+
+func checkDB(t *time.Ticker, db *sql.DB) {
+	for i := range t.C {
+		err := db.Ping()
+		if err != nil {
+			fmt.Println("Db connection failed at : ", i)
+			check(err)
+		} else {
+			fmt.Println("Db connection successful : ", i)
+		}
 	}
 }
