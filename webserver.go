@@ -34,6 +34,7 @@ func init() {
 }
 
 func main() {
+	http.Handle("/", http.FileServer(http.Dir("./src")))
 	http.HandleFunc("/articles/", articlehandler.ReturnArticle)
 	http.HandleFunc("/", articlehandler.ReturnHomePage)
 	log.Fatal(http.ListenAndServe(":8080", nil))
