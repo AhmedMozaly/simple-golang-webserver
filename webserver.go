@@ -23,7 +23,6 @@ func init() {
 	}
 	dbString := readConfig("server.confi")
 	var err error
-	//var articleMux = http.NewServeMux()
 	db, err := sql.Open("mysql", dbString)
 	check(err)
 	err = db.Ping()
@@ -82,3 +81,4 @@ func checkDB(t *time.Ticker, db *sql.DB) {
 		}
 	}
 }
+

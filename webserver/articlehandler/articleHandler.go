@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+//	"encoding/json"
 )
 
 type article struct {
@@ -36,6 +37,7 @@ func ReturnArticle(w http.ResponseWriter, r *http.Request) {
 	template, err := template.ParseFiles("./src/articles/article.html")
 	article := getArticle(articleID)
 	err = template.Execute(w, article)
+	//article, err := json.Marshal(getArticle(articleID))
 	if err != nil {
 		log.Fatal("Fatal parsing error : ", err)
 	}
@@ -85,3 +87,4 @@ func getArticle(id int) article {
 	returnArticle.Scan(&ar.ID, &ar.Title, &ar.PostText, &ar.Date)
 	return ar
 }
+
