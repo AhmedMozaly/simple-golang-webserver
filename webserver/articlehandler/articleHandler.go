@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
-//	"encoding/json"
+	"encoding/json"
 )
 
 type article struct {
@@ -41,27 +41,31 @@ func ReturnArticle(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Fatal("Fatal parsing error : ", err)
 	}
+}
+//ReturnArticlesForHomePage returns a JSON response containing data on the Articles
+func ReturnArticlesForHomePage(w http.ResponseWriter, r *http.Request){
+	articles, err := json.Marshal(frontPagePosts())
+	if err != nil {
+		log.Fatal("JSON FAIL", err)
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(articles)
 
 }
 
-//ReturnHomePage Returns the index.html of the site after populating it with a slightly cut down volume of article data for the page
+
+
+//ReturnHomePage Returns the index.html of the site, now populated by VUE.js components dynamically. 
 func ReturnHomePage(w http.ResponseWriter, r *http.Request) {
 
-	var allp = frontPagePosts(sqldb)
-	//var posts = postBin{testPost}
-	templates, err := template.ParseFiles("./src/index.html")
-	if err != nil {
-		log.Fatal("Parsing error : ", err)
-	}
-	homePage := templates.Lookup("index.html")
-	homePage.Execute(w, allp)
+	http.ServeFile(w, r, "./src/index.html")
 
 }
 
-func frontPagePosts(db *sql.DB) postBin {
-	returnPost, err := db.Query("SELECT * FROM blog.blog_posts LIMIT 5")
+func frontPagePosts() postBin {
+	returnPost, err := sqldb.Query("SELECT * FROM blog.blog_posts LIMIT 5")
 	if err != nil {
-		log.Fatal("DB statement failed : ", err)
+		log.Fatal("sqldb statement failed : ", err)
 	}
 	var dbResults []article
 	defer returnPost.Close()

@@ -28,14 +28,16 @@ func init() {
 	err = db.Ping()
 	check(err)
 	dbChecker := time.NewTicker(time.Minute)
-	go checkDB(dbChecker, db)
 	articlehandler.PassDataBase(db)
+	go checkDB(dbChecker, db)
+	
 }
 
 func main() {
 	http.Handle("/", http.FileServer(http.Dir("./src")))
 	http.HandleFunc("/articles/", articlehandler.ReturnArticle)
 	http.HandleFunc("/index.html", articlehandler.ReturnHomePage)
+	http.HandleFunc("/api/articles", articlehandler.ReturnArticlesForHomePage)
 	log.Fatal(http.ListenAndServe(":8080", nil))
 }
 
