@@ -31,12 +31,11 @@ and is wrapped around the whole page content, except for the footer in this exam
 <div class="w3-row">
 
 <!-- Blog entries -->
-<div class="w3-col l8 s12">
-  <div id="app2">
+<div class="w3-col l8 s12" id="articleHandler">
+  
     <article-front v-for="item in articles" :article="item" :key="item.id">
 
     </article-front>
-  </div>
   <!-- Blog entry -->
 
 <!-- END BLOG ENTRIES -->
@@ -53,7 +52,7 @@ and is wrapped around the whole page content, except for the footer in this exam
     </div>
   </div><hr>
 
-  <div class="w3-card w3-margin w3-margin-top" id="app">
+  <div class="w3-card w3-margin w3-margin-top" id="todoList">
     <div class="w3-container w3-white">
     <ul class="clean-list w3-ul">
         <todo-item v-for="item in todoList.slice().reverse()" :todo="item" :key="item.id" class="w3-container w3-padding-small" v-bind:class="{ 'strike-through w3-opacity' : item.done }">

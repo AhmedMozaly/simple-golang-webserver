@@ -7,7 +7,7 @@ Vue.component("article-front", {
       <h5>Title description, <span class="w3-opacity">{{ article.Date }}</span></h5>\
     </div>\
     <div class="w3-container">\
-      <p>{{ article.PostText }}</p>\
+      <p>{{ article.text }}</p>\
       <div class="w3-row">\
         <div class="w3-col m8 s12">\
           <p><a :href="article.ID" class="w3-button w3-padding-large w3-white w3-border"><b>READ MORE »</b></a></p>\
@@ -20,28 +20,31 @@ Vue.component("article-front", {
   </div>'
   });
   //Initialize the props associated with the components
-  var app = new Vue({
-    el: "#app2",
+  var articleHandler = new Vue({
+    el: "#articleHandler",
     data: function() {
       return {
         articles: [],
         loading: true,
         errored: false,
+        expanded: false,
         route: "/articles/"
       };
     },
-   /* computed: {
-      getURL: function(_article) {
-        return this.route+_article.ID;
+   computed: {
+      getURL: function() {
+        return this.route+1;
+      },
+      shortenText: function() {
+        return "ABC";
       }
-    },*/
+    },
   
     mounted () {
         axios
             .get('/api/articles')
             .then(response => {
-                this.articles = response.data.Posters
-                console.log(response.data.Posters)
+                this.articles = response.data.Posters               
             })
             .catch(error => {
                 console.log(error);

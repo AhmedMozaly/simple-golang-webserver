@@ -4,8 +4,8 @@ Vue.component("todo-item", {
     template: '<li>{{ todo.text }}<slot></slot></li>'
   });
   //Initialize the props associated with the components
-  var app = new Vue({
-    el: "#app",
+  var todoList = new Vue({
+    el: "#todoList",
     data: function() {
       return {
         newTodoText: "",
